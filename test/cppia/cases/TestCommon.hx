@@ -78,6 +78,18 @@ class TestCommon extends Test {
     }
 
     @:depends(testStatus)
+    function testBoolMemberStorage() {
+        final cls = Type.resolveClass('ClientBoolField');
+
+        if (Assert.notNull(cls, 'Unable to resolve ClientBoolField')) {
+            final obj = Type.createInstance(cls, []);
+
+            Assert.equals('true', Std.string(Reflect.field(obj, 'flag')), 'Member Bool did not read back as a boolean');
+            Assert.equals('true', Std.string(Reflect.field(cls, 'staticFlag')), 'Static Bool did not read back as a boolean');
+        }
+    }
+
+    @:depends(testStatus)
     function testThrowFromOverriddenHostMethod() {
         final obj:HostBase = Type.createInstance(Type.resolveClass('ClientThrowingOverride'), []);
 
@@ -92,6 +104,26 @@ class TestCommon extends Test {
 
             Assert.equals('boom update', caught, 'The throw did not reach the native caller');
             assertScriptStillRuns();
+        }
+    }
+
+    @:depends(testStatus)
+    function testBoolMemberFromScript() {
+        final cls = Type.resolveClass('ClientBoolField');
+
+        if (Assert.notNull(cls, 'Unable to resolve ClientBoolField')) {
+            final obj = Type.createInstance(cls, []);
+
+            Assert.equals(true, Reflect.callMethod(obj, Reflect.field(obj, 'readFlag'), []),
+                'Script read of a true Bool member failed');
+            Assert.equals(false, Reflect.callMethod(obj, Reflect.field(obj, 'readOffFlag'), []),
+                'Script read of a false Bool member failed');
+            Assert.equals('true', Reflect.callMethod(obj, Reflect.field(obj, 'flagToString'), []),
+                'Bool member did not stringify as a boolean');
+            Assert.equals(10, Reflect.callMethod(obj, Reflect.field(obj, 'branchOnFlag'), []),
+                'Branch on a true Bool member took the wrong arm');
+            Assert.equals(20, Reflect.callMethod(obj, Reflect.field(obj, 'branchOnOffFlag'), []),
+                'Branch on a false Bool member took the wrong arm');
         }
     }
 
@@ -116,6 +148,27 @@ class TestCommon extends Test {
     function assertScriptStillRuns() {
         Assert.equals('still here', Std.string(Reflect.callMethod(null, Reflect.field(Type.resolveClass('ClientThrower'), 'fine'), [])),
             'A later call answered null, so the exception was left on the context');
+    }
+
+    @:depends(testStatus)
+    function testBoolMemberWrite() {
+        final cls = Type.resolveClass('ClientBoolField');
+
+        if (Assert.notNull(cls, 'Unable to resolve ClientBoolField')) {
+            final obj = Type.createInstance(cls, []);
+
+            Assert.equals(false, Reflect.callMethod(obj, Reflect.field(obj, 'clearFlag'), []),
+                'Script write of a Bool member did not stick');
+            Assert.equals('false', Std.string(Reflect.field(obj, 'flag')),
+                'Reflection did not see the script write');
+
+            Reflect.setField(obj, 'flag', true);
+
+            Assert.equals(true, Reflect.callMethod(obj, Reflect.field(obj, 'readFlag'), []),
+                'Script did not see the reflection write');
+            Assert.equals(10, Reflect.callMethod(obj, Reflect.field(obj, 'branchOnFlag'), []),
+                'Branch did not see the reflection write');
+        }
     }
 
     @:depends(testStatus)
