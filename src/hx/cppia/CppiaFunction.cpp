@@ -16,7 +16,14 @@ String sInvalidArgCount = HX_CSTRING("Invalid arguement count");
 #ifdef CPPIA_JIT
 void SLJIT_CALL argToInt(CppiaCtx *ctx) { ctx->pushInt( (* (hx::Object **)(ctx->pointer))->__ToInt() ); }
 void SLJIT_CALL argToDouble(CppiaCtx *ctx) { ctx->pushFloat( (* (hx::Object **)(ctx->pointer))->__ToDouble() ); }
-void SLJIT_CALL argToString(CppiaCtx *ctx) { ctx->pushString( (* (hx::Object **)(ctx->pointer))->__ToString() ); }
+void SLJIT_CALL argToString(CppiaCtx *ctx)
+{
+   TRY_NATIVE
+   ctx->pushString( (* (hx::Object **)(ctx->pointer))->__ToString() );
+   return;
+   CATCH_NATIVE
+   ctx->pushString( String() );
+}
 #endif
 
 
@@ -283,7 +290,11 @@ void SLJIT_CALL objectToDoublePointer(CppiaCtx *inCtx)
 }
 void SLJIT_CALL objectToStringPointer(CppiaCtx *inCtx)
 {
+   TRY_NATIVE
    *(String *)inCtx->pointer = (*(hx::Object **)inCtx->pointer)->toString();
+   return;
+   CATCH_NATIVE
+   *(String *)inCtx->pointer = String();
 }
 void SLJIT_CALL objectToString(CppiaCtx *inCtx) { inCtx->returnString( inCtx->getObject() ); }
 void SLJIT_CALL stringToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getString() ); }
@@ -500,6 +511,13 @@ struct AutoFrame
 #endif
 
 
+static void raiseScriptException(CppiaCtx *ctx)
+{
+   Dynamic caught = ctx->exception;
+   ctx->exception = 0;
+   HX_STACK_DO_THROW(caught);
+}
+
 
 // Run the actual function
 void ScriptCallable::runFunction(CppiaCtx *ctx)
@@ -508,10 +526,14 @@ void ScriptCallable::runFunction(CppiaCtx *ctx)
    #ifdef CPPIA_JIT
    if (compiled)
    {
+      {
       AutoFrame frame(ctx);
       //printf("Running compiled code...\n");
       compiled(ctx);
       //printf("Done.\n");
+      }
+      if (ctx->exception)
+         raiseScriptException(ctx);
    }
    else
    #endif
@@ -762,6 +784,9 @@ public:
                default: ;
             }
          }
+         else
+            raiseScriptException(ctx);
+
          return null();
       }
       //printf("Not compiled %d!\n", function->captureVars.size());

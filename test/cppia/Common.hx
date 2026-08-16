@@ -1,5 +1,19 @@
+class HostThrowingToString
+{
+   public function new() {}
+
+   public function toString():String {
+      throw "boom toString";
+   }
+}
+
 class Common
 {
+   public static function makeThrowingToString():Dynamic {
+      return new HostThrowingToString();
+   }
+
+
    public static var status:String = "tests not run";
    public static var hostImplementation:pack.HostInterface;
    public static var clientImplementation:pack.HostInterface;

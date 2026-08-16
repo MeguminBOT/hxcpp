@@ -14,6 +14,34 @@ class ClientFoo implements IFoo {
    }
 }
 
+class ClientThrower {
+
+   public static var boomProperty(get, never):String;
+
+   static function get_boomProperty():String {
+      throw "boom property";
+   }
+
+   public static function boom():String {
+      throw "boom";
+   }
+
+   public static function fine():String {
+      return "still here";
+   }
+}
+
+class ClientThrowingOverride extends HostBase {
+
+   public function new() {
+      super();
+   }
+
+   override public function update():String {
+      throw "boom update";
+   }
+}
+
 class Client
 {
    public static var clientBool0 = true;
@@ -260,6 +288,20 @@ class Client
 
       Common.clientRoot = extending;
 
+
+      switch ToStringExceptions.testConcat() {
+         case Error(message):
+            Common.status = 'Failed test for throwing toString in concatenation: ' + message;
+            return;
+         default:
+      }
+
+      switch ToStringExceptions.testConversion() {
+         case Error(message):
+            Common.status = 'Failed test for throwing toString in conversion: ' + message;
+            return;
+         default:
+      }
 
       Common.clientImplementation = new ClientOne();
       Common.status = "ok";
