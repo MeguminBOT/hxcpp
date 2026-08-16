@@ -117,6 +117,34 @@ class TestCommon extends Test {
         }
     }
 
+    function callBoolConst(name:String, args:Array<Dynamic>):Dynamic {
+        final cls = Type.resolveClass('ClientBoolConst');
+
+        if (!Assert.notNull(cls, 'Unable to resolve ClientBoolConst')) {
+            return null;
+        }
+
+        return Reflect.callMethod(null, Reflect.field(cls, name), args);
+    }
+
+    @:depends(testStatus)
+    function testBoolConstToDynamic() {
+        Assert.equals('true', callBoolConst('constToDynamic', []),
+            'Bool constant boxed as a number');
+    }
+
+    @:depends(testStatus)
+    function testBoolConstInAnyArray() {
+        final arr:Array<Any> = callBoolConst('anyArrayWithConsts', []);
+
+        if (Assert.notNull(arr, 'No array returned')) {
+            Assert.isTrue(Std.isOfType(arr[0], Bool), 'Bool constant did not store as a Bool');
+            Assert.isTrue(Std.isOfType(arr[1], Bool), 'Bool constant did not store as a Bool');
+            Assert.equals('true', Std.string(arr[0]), 'Bool constant stored in an Any array as a number');
+            Assert.equals('false', Std.string(arr[1]), 'Bool constant stored in an Any array as a number');
+        }
+    }
+
     @:depends(testStatus)
     function testBoolMemberStorage() {
         final cls = Type.resolveClass('ClientBoolField');
@@ -208,6 +236,15 @@ class TestCommon extends Test {
                 'Script did not see the reflection write');
             Assert.equals(10, Reflect.callMethod(obj, Reflect.field(obj, 'branchOnFlag'), []),
                 'Branch did not see the reflection write');
+        }
+    }
+
+    @:depends(testStatus)
+    function testBoolComparisonInAnyArray() {
+        final arr:Array<Any> = callBoolConst('anyArrayWithComparison', [3]);
+
+        if (Assert.notNull(arr, 'No array returned')) {
+            Assert.equals('true', Std.string(arr[0]), 'Bool comparison stored in an Any array as a number');
         }
     }
 
