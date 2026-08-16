@@ -73,9 +73,49 @@ class TestCommon extends Test {
             }
 
             Assert.equals('boom', caught, 'The throw did not reach the caller');
-            Assert.equals('still here', Std.string(Reflect.callMethod(null, Reflect.field(cls, 'fine'), [])),
-                'A later call answered null, so the exception was left on the context');
+            assertScriptStillRuns();
         }
+    }
+
+    @:depends(testStatus)
+    function testThrowFromOverriddenHostMethod() {
+        final obj:HostBase = Type.createInstance(Type.resolveClass('ClientThrowingOverride'), []);
+
+        if (Assert.notNull(obj, 'Unable to create ClientThrowingOverride')) {
+            var caught:String = null;
+
+            try {
+                obj.update();
+            } catch (e:Dynamic) {
+                caught = Std.string(e);
+            }
+
+            Assert.equals('boom update', caught, 'The throw did not reach the native caller');
+            assertScriptStillRuns();
+        }
+    }
+
+    @:depends(testStatus)
+    function testThrowFromPropertyGetter() {
+        final cls = Type.resolveClass('ClientThrower');
+
+        if (Assert.notNull(cls, 'Unable to resolve ClientThrower')) {
+            var caught:String = null;
+
+            try {
+                Reflect.getProperty(cls, 'boomProperty');
+            } catch (e:Dynamic) {
+                caught = Std.string(e);
+            }
+
+            Assert.equals('boom property', caught, 'The throw did not reach the native caller');
+            assertScriptStillRuns();
+        }
+    }
+
+    function assertScriptStillRuns() {
+        Assert.equals('still here', Std.string(Reflect.callMethod(null, Reflect.field(Type.resolveClass('ClientThrower'), 'fine'), [])),
+            'A later call answered null, so the exception was left on the context');
     }
 
     @:depends(testStatus)

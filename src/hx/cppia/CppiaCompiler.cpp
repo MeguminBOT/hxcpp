@@ -58,7 +58,11 @@ static void SLJIT_CALL intToStr(int inVal, String *outString)
 }
 static void SLJIT_CALL objToStr(hx::Object *inVal, String *outString)
 {
+   TRY_NATIVE
    *outString = inVal ? inVal->toString() : String();
+   return;
+   CATCH_NATIVE
+   *outString = String();
 }
 int SLJIT_CALL objToInt(hx::Object *inVal)
 {
@@ -926,6 +930,7 @@ public:
                   makeAddress(sJitTemp1,inTarget);
                   callNative( (void *)objToStr, inSrc.as(jtPointer), sJitTemp1.as(jtPointer) );
                }
+               checkException();
                break;
 
 

@@ -6449,9 +6449,10 @@ struct TryExpr : public CppiaVoidExpr
 
             // Exception is this type
             ExprType type = c.var.expressionType;
-            compiler->convert( sJitCtx.star(jtPointer,offsetof(hx::StackContext,exception)), etObject,
-                              JitFramePos(c.var.stackPos,getJitType(type)), type );
+            JitTemp caught(compiler,jtPointer);
+            compiler->move(caught, sJitCtx.star(jtPointer,offsetof(hx::StackContext,exception)) );
             compiler->move(sJitCtx.star(jtPointer,offsetof(hx::StackContext,exception)),(void *)0);
+            compiler->convert( caught, etObject, JitFramePos(c.var.stackPos,getJitType(type)), type );
 
             c.body->genCode(compiler, inDest, destType);
 
